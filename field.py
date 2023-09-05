@@ -27,10 +27,20 @@ class Field(Mesh):
                 directory += '/'
 
         # get nrad and nsec (number of cells in radial and azimuthal directions)
-        buf, buf, buf, buf, buf, buf, nrad, nsec = np.loadtxt(directory+"dims.dat",
-                                                      unpack=True)
-        nrad = int(nrad)
-        nsec = int(nsec)
+        # buf, buf, buf, buf, buf, buf, nrad, nsec = np.loadtxt(directory+"dims.dat",
+        #                                             unpack=True)
+
+        command1 = 'awk " /^NX/ " '+directory+'variables.par'
+        command2 = 'awk " /^NY/ " '+directory+'variables.par'
+        # check which version of python we're using
+        if sys.version_info[0] < 3:   # python 2.X
+            buf1 = subprocess.check_output(command1, shell=True)
+            buf2 = subprocess.check_output(command2, shell=True)
+        else:                         # python 3.X
+            buf1 = subprocess.check_output(command1, shell=True)
+            buf2 = subprocess.check_output(command2, shell=True)
+        nsec = int(buf1.split()[1])
+        nrad = int(buf2.split()[1])
         self.nrad = nrad
         self.nsec = nsec
         self.ncol = par.ncol              # colatitude (ncol is a global variable)

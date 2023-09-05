@@ -55,6 +55,8 @@ for line in lines_params:
         name, value = line.split()[0:2]
     try:
         float(value)           # first trying with float
+        if (name == 'dustfluids' and value == '1'):   # taking care of case when only one dust fluid is used
+            value = [int(1)]
     except ValueError:         # if it is not float
         try:
             int(value)         # we try with integer
@@ -62,6 +64,8 @@ for line in lines_params:
             # we try with array with several values separated by a comma (,)
             if(regex.search(value) != None):  
                 if name == 'dustfluids':
+                    # print("regx search output is ", regex.search(value))
+                    # print("fluid_id is :", value, ", type is ", type(value))
                     value = [int(x) for x in value.split(',')]
             else:
                 value = '"' + value + '"'   # if none of the above tests work, we know value is a string
@@ -86,6 +90,8 @@ hydro2D = 'Yes'
 fargo3d = 'No'
 if os.path.isfile(dir+'/variables.par') == True:
     fargo3d = 'Yes'
+    print("The simulation is carried out by fargo3d")
+    print("Simulation outputs are stored in ",str(dir))
 
 if fargo3d == 'No':
     dustfluids = 'No'
@@ -182,18 +188,23 @@ if fargo3d == 'Yes' and RTdust_or_gas == 'dust':
         buf = subprocess.check_output(command, shell=True)
     else:                         # python 3.X
         buf = subprocess.getoutput(command)
+        print("buf is", buf)
     dust_internal_density = float(buf.split()[1])   # in g / cm^3
     # case where dust fluids are simulated
     if dustfluids != 'No':
         # find out how many dust fluids there are:
+        print("dustfluids is : ", dustfluids)
         input_file = dir+'/dustsizes.dat'
         dust_id, dust_size, dust_gas_ratio = np.loadtxt(input_file,unpack=True)
         nbin = len(np.atleast_1d(dust_id))   # in case only a single dust fluid is used
         if nbin != 1:
+            print("number of bins is ", nbin)
             amin = dust_size[dustfluids[0]-1]
             amax = dust_size[dustfluids[1]-1]
             nbin = dustfluids[1]-dustfluids[0]+1
             bins = dust_size[dustfluids[0]-1:dustfluids[1]]
+            print("amin = ", amin)
+            print('dust size: ', dust_size)
         else: # case only a single dust fluid is used
             amin = dust_size
             amax = amin
@@ -221,16 +232,21 @@ if fargo3d == 'Yes' and RTdust_or_gas == 'dust':
         bins = np.logspace(np.log10(amin), np.log10(amax), nbin+1) 
 else:
     bins = np.logspace(np.log10(amin), np.log10(amax), nbin+1) 
-        
-# label for the name of the image file created by RADMC3D
+
+simulation_name = dir.split("/")[-1]    # Getting name of simulation from fargo output dir
+# labels for the name of the image files created by RADMC3D
 if RTdust_or_gas == 'dust':
-    label = dir+'_o'+str(on)+'_p'+str(pindex)+'_r'+str(ratio)+'_a'+str(amin)+'_'+str(amax)+'_nb'+str(nbin)+'_mode'+str(scat_mode)+'_np'+str('{:.0e}'.format(nb_photons))+'_nc'+str(ncol)+'_z'+str(z_expansion)+'_xf'+str(xaxisflip)+'_Td'+str(Tdust_eq_Thydro)
+    label = simulation_name +'_o'+str(on)+'_p'+str(pindex)+'_r'+ \
+            str(ratio)+'_a'+str(amin)+'_'+str(amax)+'_nb'+str(nbin)+ \
+            '_mode'+str(scat_mode)+'_np'+str('{:.0e}'.format(nb_photons))+'_nc'+ \
+            str(ncol)+'_z'+str(z_expansion)+'_xf'+str(xaxisflip)+'_Td'+ \
+            str(Tdust_eq_Thydro)
     
 if RTdust_or_gas == 'gas':
     if widthkms == 0.0:
-        label = dir+'_o'+str(on)+'_gas'+str(gasspecies)+'_iline'+str(iline)+'_lmode'+str(lines_mode)+'_ab'+str('{:.0e}'.format(abundance))+'_vkms'+str(vkms)+'_turbvel'+str(turbvel)+'_nc'+str(ncol)+'_xf'+str(xaxisflip)+'_Td'+str(Tdust_eq_Thydro)
+        label = simulation_name+'_o'+str(on)+'_gas'+str(gasspecies)+'_iline'+str(iline)+'_lmode'+str(lines_mode)+'_ab'+str('{:.0e}'.format(abundance))+'_vkms'+str(vkms)+'_turbvel'+str(turbvel)+'_nc'+str(ncol)+'_xf'+str(xaxisflip)+'_Td'+str(Tdust_eq_Thydro)
     else:
-        label = dir+'_o'+str(on)+'_gas'+str(gasspecies)+'_iline'+str(iline)+'_lmode'+str(lines_mode)+'_ab'+str('{:.0e}'.format(abundance))+'_widthkms'+str(widthkms)+'_turbvel'+str(turbvel)+'_nc'+str(ncol)+'_xf'+str(xaxisflip)+'_Td'+str(Tdust_eq_Thydro)
+        label = simulation_name+'_o'+str(on)+'_gas'+str(gasspecies)+'_iline'+str(iline)+'_lmode'+str(lines_mode)+'_ab'+str('{:.0e}'.format(abundance))+'_widthkms'+str(widthkms)+'_turbvel'+str(turbvel)+'_nc'+str(ncol)+'_xf'+str(xaxisflip)+'_Td'+str(Tdust_eq_Thydro)
         
 if RTdust_or_gas == 'both':
     sys.exit('Case not worked out yet...')
@@ -271,6 +287,7 @@ if RTdust_or_gas == 'gas':
     outfile += '_moment'+str(moment_order)
    
 outputfitsfile = outfile+'.fits'
+print("Output fits file is :", outputfitsfile)
 
 if os.path.isfile(outputfitsfile) == False and recalc_rawfits == 'No':
     print('file '+outputfitsfile+' is missing, I need to activate recalc_rawfits')

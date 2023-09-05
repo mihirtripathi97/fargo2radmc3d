@@ -147,8 +147,7 @@ def exportfits():
         else:
             # image.fits is already present, no need to keep image.out!
             os.system('rm -f image.out')
-
-            
+        
     # ----------
     # if image.out is no longer here (it has been deleted), we read image.fits file instead
     # ----------
@@ -204,8 +203,7 @@ def exportfits():
         # stdev lengths in pixel
         stdev_x = (par.bmaj/(2.*np.sqrt(2.*np.log(2.)))) / mycdelt
         stdev_y = (par.bmin/(2.*np.sqrt(2.*np.log(2.)))) / mycdelt
-
-            
+           
     # ----------
     # Operations on images
     # ----------

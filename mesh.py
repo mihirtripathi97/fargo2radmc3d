@@ -27,7 +27,7 @@ class Mesh():
         # RADMC3D are built from the set of cylindrical radii in the
         # FARGO 2D simulation
         try:
-            domain_rad = np.loadtxt(directory+"used_rad.dat")  # radial interfaces of grid cells
+            domain_rad = np.loadtxt(directory+"domain_y.dat")[3:-3]  # radial interfaces of grid cells
         except IOError:
             print('IOError')
         self.redge = domain_rad                                # r-edge
